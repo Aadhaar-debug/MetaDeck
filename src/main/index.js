@@ -148,7 +148,6 @@ const PAYLOAD_FORMATS = {
     { id: 'elf', label: 'Linux ELF', ext: '' },
     { id: 'elf-so', label: 'Linux shared object .so', ext: '.so' },
     { id: 'macho', label: 'macOS Mach-O', ext: '' },
-    { id: 'apk', label: 'Android .apk', ext: '.apk' },
     { id: 'jar', label: 'Java .jar', ext: '.jar' },
     { id: 'war', label: 'Java .war', ext: '.war' }
   ],

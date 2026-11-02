@@ -44,7 +44,13 @@ export class PayloadBuilder {
         if (v !== undefined && v !== '') args.push(`${k}=${v}`)
       }
 
-      args.push('-f', cfg.format || 'raw')
+      // 'apk' (and 'jar' for some java payloads) are produced by the payload's
+      // own generator via a bare -o, with no -f transform. Passing -f apk fails.
+      if (cfg.format === 'apk') {
+        // no -f: the android payload emits an .apk by default
+      } else {
+        args.push('-f', cfg.format || 'raw')
+      }
       if (cfg.arch) args.push('-a', cfg.arch)
       if (cfg.platform) args.push('--platform', cfg.platform)
       if (cfg.encoder) args.push('-e', cfg.encoder)
