@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
@@ -6,6 +6,7 @@ import os from 'node:os'
 import { existsSync } from 'node:fs'
 import { MsfRpcClient } from './msfrpc.js'
 import { ServerManager } from './serverManager.js'
+import { PayloadBuilder } from './msfvenom.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -135,6 +136,64 @@ ipcMain.handle('rpc:call', async (_e, { method, args }) => {
 })
 
 ipcMain.handle('open:external', (_e, url) => shell.openExternal(url))
+
+// ---- IPC: payload builder (msfvenom) -------------------------------------
+// Curated output formats — the ones that matter most for a beginner, grouped.
+const PAYLOAD_FORMATS = {
+  'Executable files': [
+    { id: 'exe', label: 'Windows .exe', ext: '.exe' },
+    { id: 'exe-service', label: 'Windows service .exe', ext: '.exe' },
+    { id: 'dll', label: 'Windows .dll', ext: '.dll' },
+    { id: 'msi', label: 'Windows installer .msi', ext: '.msi' },
+    { id: 'elf', label: 'Linux ELF', ext: '' },
+    { id: 'elf-so', label: 'Linux shared object .so', ext: '.so' },
+    { id: 'macho', label: 'macOS Mach-O', ext: '' },
+    { id: 'apk', label: 'Android .apk', ext: '.apk' },
+    { id: 'jar', label: 'Java .jar', ext: '.jar' },
+    { id: 'war', label: 'Java .war', ext: '.war' }
+  ],
+  'Script files': [
+    { id: 'psh', label: 'PowerShell .ps1', ext: '.ps1' },
+    { id: 'python', label: 'Python .py', ext: '.py' },
+    { id: 'bash', label: 'Bash .sh', ext: '.sh' },
+    { id: 'vba', label: 'VBA macro', ext: '.vba' },
+    { id: 'asp', label: 'ASP', ext: '.asp' },
+    { id: 'aspx', label: 'ASPX', ext: '.aspx' },
+    { id: 'hta-psh', label: 'HTA (PowerShell)', ext: '.hta' }
+  ],
+  'Raw / shellcode': [
+    { id: 'raw', label: 'Raw bytes', ext: '.bin' },
+    { id: 'c', label: 'C array', ext: '.c' },
+    { id: 'csharp', label: 'C# array', ext: '.cs' },
+    { id: 'hex', label: 'Hex', ext: '.txt' },
+    { id: 'base64', label: 'Base64', ext: '.txt' }
+  ]
+}
+ipcMain.handle('payload:formats', () => PAYLOAD_FORMATS)
+
+ipcMain.handle('payload:build', async (_e, params) => {
+  const settings = loadSettings()
+  const builder = new PayloadBuilder((line) => sendToRenderer('payload:log', line))
+  return builder.build({
+    frameworkPath: settings.frameworkPath,
+    rubyBin: settings.rubyBin,
+    ...params
+  })
+})
+
+// Native Save dialog so the user picks where the artifact is written.
+ipcMain.handle('payload:save-dialog', async (_e, { defaultName }) => {
+  const res = await dialog.showSaveDialog(mainWindow, {
+    title: 'Save payload file',
+    defaultPath: path.join(app.getPath('downloads'), defaultName || 'payload.bin')
+  })
+  return res.canceled ? null : res.filePath
+})
+
+ipcMain.handle('path:reveal', (_e, p) => {
+  if (p && existsSync(p)) shell.showItemInFolder(p)
+  return true
+})
 
 // ---- lifecycle ------------------------------------------------------------
 app.whenReady().then(() => {

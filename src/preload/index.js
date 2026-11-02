@@ -32,6 +32,17 @@ const api = {
   // generic RPC call used by all panels
   rpc: (method, args = []) => ipcRenderer.invoke('rpc:call', { method, args }),
 
+  // payload builder (msfvenom)
+  payloadFormats: () => ipcRenderer.invoke('payload:formats'),
+  buildPayload: (params) => ipcRenderer.invoke('payload:build', params),
+  payloadSaveDialog: (defaultName) => ipcRenderer.invoke('payload:save-dialog', { defaultName }),
+  revealPath: (p) => ipcRenderer.invoke('path:reveal', p),
+  onPayloadLog: (cb) => {
+    const h = (_e, line) => cb(line)
+    ipcRenderer.on('payload:log', h)
+    return () => ipcRenderer.removeListener('payload:log', h)
+  },
+
   openExternal: (url) => ipcRenderer.invoke('open:external', url)
 }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import Sidebar from './components/Sidebar.jsx'
 import ConnectPanel from './components/ConnectPanel.jsx'
 import ModuleBrowser from './components/ModuleBrowser.jsx'
+import PayloadBuilder from './components/PayloadBuilder.jsx'
 import SessionsDashboard from './components/SessionsDashboard.jsx'
 import ConsolePanel from './components/ConsolePanel.jsx'
 import Toasts, { useToasts } from './components/Toasts.jsx'
@@ -57,6 +58,9 @@ export default function App() {
           {tab === 'modules' && (
             <ModuleBrowser connected={connection.connected} rpc={rpc} push={push} />
           )}
+          {tab === 'payloads' && (
+            <PayloadBuilder connected={connection.connected} rpc={rpc} push={push} />
+          )}
           {tab === 'sessions' && (
             <SessionsDashboard connected={connection.connected} rpc={rpc} push={push} />
           )}
@@ -73,6 +77,7 @@ export default function App() {
 const TABS = {
   connect: 'Connection & Server',
   modules: 'Module Browser',
+  payloads: 'Payload Builder',
   sessions: 'Sessions',
   console: 'Console'
 }

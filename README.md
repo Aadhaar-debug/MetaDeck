@@ -24,6 +24,10 @@ point used by Armitage and Metasploit Pro.
   `RHOSTS` / `RPORT` / `LHOST` / `LPORT` highlighted and required fields marked.
 - **Payload picker** — for exploits, choose a compatible payload from a dropdown and
   fill its options too.
+- **Payload Builder** — generate standalone, transferable payload **files** with
+  `msfvenom` (Windows `.exe`/`.dll`, Linux ELF, macOS Mach-O, Android `.apk`,
+  PowerShell/Python/Bash scripts, raw shellcode, and more), with optional encoders,
+  iterations and bad-character avoidance, saved wherever you choose.
 - **Sessions dashboard** — live cards for every open session with an interactive
   shell / Meterpreter terminal.
 - **Console** — a real `msfconsole` embedded in the app, with quick-command chips
