@@ -3,6 +3,9 @@ import OptionForm from './OptionForm.jsx'
 
 const api = window.metadeck
 
+// module.<type> list RPC calls return { modules: [...] }; tolerate a bare array.
+const asList = (r) => (Array.isArray(r) ? r : (r && Array.isArray(r.modules) ? r.modules : []))
+
 export default function PayloadBuilder({ connected, rpc, push }) {
   const [allPayloads, setAllPayloads] = useState([])
   const [encoders, setEncoders] = useState([])
@@ -32,8 +35,9 @@ export default function PayloadBuilder({ connected, rpc, push }) {
 
   useEffect(() => {
     if (!connected) return
-    rpc('module.payloads').then((r) => setAllPayloads(Array.isArray(r) ? r : [])).catch(() => {})
-    rpc('module.encoders').then((r) => setEncoders(Array.isArray(r) ? r : [])).catch(() => {})
+    // module.<type> list calls return { modules: [...] }; tolerate a bare array too.
+    rpc('module.payloads').then((r) => setAllPayloads(asList(r))).catch(() => {})
+    rpc('module.encoders').then((r) => setEncoders(asList(r))).catch(() => {})
   }, [connected])
 
   useEffect(() => {
