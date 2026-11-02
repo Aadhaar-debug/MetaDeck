@@ -1,0 +1,20 @@
+appId: com.metadeck.app
+productName: MetaDeck
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+  artifactName: MetaDeck-${version}-${arch}.${ext}
+  icon: build/icon.icns
+  # Local/unsigned build — no Apple Developer signing or notarization.
+  identity: null
+  hardenedRuntime: false
+dmg:
+  title: MetaDeck ${version}
+  artifactName: MetaDeck-${version}-${arch}.${ext}
