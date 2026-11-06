@@ -3,6 +3,8 @@ import Sidebar from './components/Sidebar.jsx'
 import ConnectPanel from './components/ConnectPanel.jsx'
 import ModuleBrowser from './components/ModuleBrowser.jsx'
 import PayloadBuilder from './components/PayloadBuilder.jsx'
+import Listeners from './components/Listeners.jsx'
+import Deliver from './components/Deliver.jsx'
 import SessionsDashboard from './components/SessionsDashboard.jsx'
 import ConsolePanel from './components/ConsolePanel.jsx'
 import Toasts, { useToasts } from './components/Toasts.jsx'
@@ -61,6 +63,10 @@ export default function App() {
           {tab === 'payloads' && (
             <PayloadBuilder connected={connection.connected} rpc={rpc} push={push} />
           )}
+          {tab === 'listeners' && (
+            <Listeners connected={connection.connected} rpc={rpc} push={push} />
+          )}
+          {tab === 'deliver' && <Deliver />}
           {tab === 'sessions' && (
             <SessionsDashboard connected={connection.connected} rpc={rpc} push={push} />
           )}
@@ -78,6 +84,8 @@ const TABS = {
   connect: 'Connection & Server',
   modules: 'Module Browser',
   payloads: 'Payload Builder',
+  listeners: 'Listeners',
+  deliver: 'Deliver',
   sessions: 'Sessions',
   console: 'Console'
 }

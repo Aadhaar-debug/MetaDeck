@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import OptionForm from './OptionForm.jsx'
+import { MODULE_CATEGORIES } from '../../shared/payloads.js'
 
 const TYPES = ['all', 'exploit', 'auxiliary', 'post', 'payload', 'encoder', 'nop']
 
 export default function ModuleBrowser({ connected, rpc, push }) {
   const [type, setType] = useState('all')
+  const [category, setCategory] = useState('all')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
@@ -21,6 +23,12 @@ export default function ModuleBrowser({ connected, rpc, push }) {
 
   const [running, setRunning] = useState(false)
   const [runResult, setRunResult] = useState(null)
+
+  // Filter the current results by the selected target category.
+  const displayed = useMemo(() => {
+    const cat = MODULE_CATEGORIES.find((c) => c.id === category) || MODULE_CATEGORIES[0]
+    return results.filter((m) => cat.match(m.fullname || m.refname || m.name || ''))
+  }, [results, category])
 
   if (!connected) return <Empty />
 
@@ -106,6 +114,17 @@ export default function ModuleBrowser({ connected, rpc, push }) {
   return (
     <div className="modbrowser">
       <div className="mod-left">
+        <div className="cat-bar">
+          {MODULE_CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              className={`cat-chip ${category === c.id ? 'active' : ''}`}
+              onClick={() => setCategory(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
         <div className="search-bar">
           <select value={type} onChange={(e) => setType(e.target.value)}>
             {TYPES.map((t) => (
@@ -125,7 +144,7 @@ export default function ModuleBrowser({ connected, rpc, push }) {
           </button>
         </div>
         <div className="results">
-          {results.map((m, i) => {
+          {displayed.map((m, i) => {
             const refname = m.fullname || m.refname || m.name
             const active = selected && selected.refname === refname
             return (
@@ -142,6 +161,9 @@ export default function ModuleBrowser({ connected, rpc, push }) {
             )
           })}
           {results.length === 0 && <div className="results-empty">Search to list modules.</div>}
+          {results.length > 0 && displayed.length === 0 && (
+            <div className="results-empty">No results in this category — try “All”.</div>
+          )}
         </div>
       </div>
 

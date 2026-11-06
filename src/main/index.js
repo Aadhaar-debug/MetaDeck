@@ -7,6 +7,9 @@ import { existsSync } from 'node:fs'
 import { MsfRpcClient } from './msfrpc.js'
 import { ServerManager } from './serverManager.js'
 import { PayloadBuilder } from './msfvenom.js'
+import { getLocalIPs } from './netinfo.js'
+import { FileServerManager } from './fileServer.js'
+import { PAYLOAD_FORMATS } from '../shared/payloads.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -138,36 +141,6 @@ ipcMain.handle('rpc:call', async (_e, { method, args }) => {
 ipcMain.handle('open:external', (_e, url) => shell.openExternal(url))
 
 // ---- IPC: payload builder (msfvenom) -------------------------------------
-// Curated output formats — the ones that matter most for a beginner, grouped.
-const PAYLOAD_FORMATS = {
-  'Executable files': [
-    { id: 'exe', label: 'Windows .exe', ext: '.exe' },
-    { id: 'exe-service', label: 'Windows service .exe', ext: '.exe' },
-    { id: 'dll', label: 'Windows .dll', ext: '.dll' },
-    { id: 'msi', label: 'Windows installer .msi', ext: '.msi' },
-    { id: 'elf', label: 'Linux ELF', ext: '' },
-    { id: 'elf-so', label: 'Linux shared object .so', ext: '.so' },
-    { id: 'macho', label: 'macOS Mach-O', ext: '' },
-    { id: 'jar', label: 'Java .jar', ext: '.jar' },
-    { id: 'war', label: 'Java .war', ext: '.war' }
-  ],
-  'Script files': [
-    { id: 'psh', label: 'PowerShell .ps1', ext: '.ps1' },
-    { id: 'python', label: 'Python .py', ext: '.py' },
-    { id: 'bash', label: 'Bash .sh', ext: '.sh' },
-    { id: 'vba', label: 'VBA macro', ext: '.vba' },
-    { id: 'asp', label: 'ASP', ext: '.asp' },
-    { id: 'aspx', label: 'ASPX', ext: '.aspx' },
-    { id: 'hta-psh', label: 'HTA (PowerShell)', ext: '.hta' }
-  ],
-  'Raw / shellcode': [
-    { id: 'raw', label: 'Raw bytes', ext: '.bin' },
-    { id: 'c', label: 'C array', ext: '.c' },
-    { id: 'csharp', label: 'C# array', ext: '.cs' },
-    { id: 'hex', label: 'Hex', ext: '.txt' },
-    { id: 'base64', label: 'Base64', ext: '.txt' }
-  ]
-}
 ipcMain.handle('payload:formats', () => PAYLOAD_FORMATS)
 
 ipcMain.handle('payload:build', async (_e, params) => {
@@ -189,10 +162,37 @@ ipcMain.handle('payload:save-dialog', async (_e, { defaultName }) => {
   return res.canceled ? null : res.filePath
 })
 
+ipcMain.handle('file:open-dialog', async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: 'Choose a file to host',
+    properties: ['openFile']
+  })
+  return res.canceled ? null : res.filePaths[0]
+})
+
 ipcMain.handle('path:reveal', (_e, p) => {
   if (p && existsSync(p)) shell.showItemInFolder(p)
   return true
 })
+
+// ---- IPC: network info + LAN file host server ----------------------------
+ipcMain.handle('net:local-ips', () => getLocalIPs())
+
+let fileServer = null
+ipcMain.handle('fileserver:start', async (_e, { filePath, port }) => {
+  if (fileServer && fileServer.running) fileServer.stop()
+  fileServer = new FileServerManager((hit) => sendToRenderer('fileserver:hit', hit))
+  const info = await fileServer.start(filePath, port || 8000)
+  const ips = getLocalIPs()
+  const host = ips[0]?.address || '127.0.0.1'
+  return {
+    ...info,
+    ips,
+    url: `http://${host}:${info.port}/${encodeURIComponent(info.fileName)}`
+  }
+})
+ipcMain.handle('fileserver:stop', () => (fileServer ? fileServer.stop() : false))
+ipcMain.handle('fileserver:status', () => (fileServer ? fileServer.status() : { running: false, info: null }))
 
 // ---- lifecycle ------------------------------------------------------------
 app.whenReady().then(() => {
@@ -204,9 +204,11 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (server) server.stop()
+  if (fileServer) fileServer.stop()
   if (process.platform !== 'darwin') app.quit()
 })
 
 app.on('before-quit', () => {
   if (server) server.stop()
+  if (fileServer) fileServer.stop()
 })

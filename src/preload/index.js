@@ -43,6 +43,18 @@ const api = {
     return () => ipcRenderer.removeListener('payload:log', h)
   },
 
+  // network info + LAN file host server
+  openFileDialog: () => ipcRenderer.invoke('file:open-dialog'),
+  localIPs: () => ipcRenderer.invoke('net:local-ips'),
+  startFileServer: (filePath, port) => ipcRenderer.invoke('fileserver:start', { filePath, port }),
+  stopFileServer: () => ipcRenderer.invoke('fileserver:stop'),
+  fileServerStatus: () => ipcRenderer.invoke('fileserver:status'),
+  onFileServerHit: (cb) => {
+    const h = (_e, hit) => cb(hit)
+    ipcRenderer.on('fileserver:hit', h)
+    return () => ipcRenderer.removeListener('fileserver:hit', h)
+  },
+
   openExternal: (url) => ipcRenderer.invoke('open:external', url)
 }
 

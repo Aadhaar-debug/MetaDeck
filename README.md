@@ -28,6 +28,13 @@ point used by Armitage and Metasploit Pro.
   `msfvenom` (Windows `.exe`/`.dll`, Linux ELF, macOS Mach-O, Android `.apk`,
   PowerShell/Python/Bash scripts, raw shellcode, and more), with optional encoders,
   iterations and bad-character avoidance, saved wherever you choose.
+- **Listeners** — start an `exploit/multi/handler` with a custom LHOST/LPORT (with
+  one-click local-IP fill) so a payload's call-back becomes a session; see and stop
+  running listeners/jobs.
+- **Deliver** — host a built file over HTTP on your LAN so an authorized target can
+  download it, with copy-able URLs for each interface and a live download log.
+- **Category tabs** in the module browser (Windows, Linux, macOS, Android, Web,
+  Multi, …) to jump straight to the target type.
 - **Sessions dashboard** — live cards for every open session with an interactive
   shell / Meterpreter terminal.
 - **Console** — a real `msfconsole` embedded in the app, with quick-command chips

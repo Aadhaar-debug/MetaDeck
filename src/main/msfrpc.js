@@ -101,7 +101,7 @@ export class MsfRpcClient {
  * UTF-8 strings recursively so the UI gets clean text. Response payloads are
  * text-heavy (module info, options, console output, session lists).
  */
-function normalize(value) {
+export function normalize(value) {
   if (value instanceof Uint8Array) {
     return Buffer.from(value).toString('utf8')
   }

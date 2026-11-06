@@ -1,6 +1,6 @@
 {
   "name": "metadeck",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "MetaDeck — a friendly point-and-click desktop GUI for the Metasploit Framework",
   "author": "MetaDeck",
   "license": "BSD-3-Clause",
@@ -11,7 +11,8 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder --mac --config electron-builder.yml",
-    "dist:dmg": "electron-vite build && electron-builder --mac dmg --config electron-builder.yml"
+    "dist:dmg": "electron-vite build && electron-builder --mac dmg --config electron-builder.yml",
+    "test": "node --test test/"
   },
   "dependencies": {
     "msgpackr": "^1.11.2"

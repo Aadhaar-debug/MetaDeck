@@ -37,28 +37,7 @@ export class PayloadBuilder {
       const rubyBin = cfg.rubyBin || 'ruby'
       const rubyDir = path.dirname(rubyBin)
 
-      const args = ['exec', 'ruby', './msfvenom', '-p', cfg.payload]
-
-      // payload options arrive as { LHOST: '1.2.3.4', LPORT: '4444', ... }
-      for (const [k, v] of Object.entries(cfg.options || {})) {
-        if (v !== undefined && v !== '') args.push(`${k}=${v}`)
-      }
-
-      // 'apk' (and 'jar' for some java payloads) are produced by the payload's
-      // own generator via a bare -o, with no -f transform. Passing -f apk fails.
-      if (cfg.format === 'apk') {
-        // no -f: the android payload emits an .apk by default
-      } else {
-        args.push('-f', cfg.format || 'raw')
-      }
-      if (cfg.arch) args.push('-a', cfg.arch)
-      if (cfg.platform) args.push('--platform', cfg.platform)
-      if (cfg.encoder) args.push('-e', cfg.encoder)
-      if (cfg.iterations) args.push('-i', String(cfg.iterations))
-      if (cfg.badchars) args.push('-b', cfg.badchars)
-      if (cfg.template) args.push('-x', cfg.template)
-      if (cfg.keepTemplateBehavior) args.push('-k')
-      args.push('-o', cfg.outFile)
+      const args = buildMsfvenomArgs(cfg)
 
       const env = {
         ...process.env,
@@ -105,3 +84,31 @@ export class PayloadBuilder {
 
 // Keep the first arg (payload name) readable; everything else is shown as-is.
 const redact = (args) => args.join(' ')
+
+/**
+ * Pure builder for the `bundle exec ruby ./msfvenom ...` argument list.
+ * Exported so it can be unit-tested without spawning a process.
+ */
+export function buildMsfvenomArgs(cfg) {
+  const args = ['exec', 'ruby', './msfvenom', '-p', cfg.payload]
+
+  // payload options arrive as { LHOST: '1.2.3.4', LPORT: '4444', ... }
+  for (const [k, v] of Object.entries(cfg.options || {})) {
+    if (v !== undefined && v !== '') args.push(`${k}=${v}`)
+  }
+
+  // 'apk' is produced by the android payload's own generator via a bare -o,
+  // with no -f transform. Passing `-f apk` fails.
+  if (cfg.format !== 'apk') {
+    args.push('-f', cfg.format || 'raw')
+  }
+  if (cfg.arch) args.push('-a', cfg.arch)
+  if (cfg.platform) args.push('--platform', cfg.platform)
+  if (cfg.encoder) args.push('-e', cfg.encoder)
+  if (cfg.iterations) args.push('-i', String(cfg.iterations))
+  if (cfg.badchars) args.push('-b', cfg.badchars)
+  if (cfg.template) args.push('-x', cfg.template)
+  if (cfg.keepTemplateBehavior) args.push('-k')
+  args.push('-o', cfg.outFile)
+  return args
+}

