@@ -3,6 +3,7 @@ import OptionForm from './OptionForm.jsx'
 import { MODULE_CATEGORIES } from '../../shared/payloads.js'
 
 const TYPES = ['all', 'exploit', 'auxiliary', 'post', 'payload', 'encoder', 'nop']
+const RENDER_CAP = 1500 // cap DOM rows for performance; refine search/category to narrow
 
 export default function ModuleBrowser({ connected, rpc, push }) {
   const [type, setType] = useState('all')
@@ -38,7 +39,7 @@ export default function ModuleBrowser({ connected, rpc, push }) {
       const res = await rpc('module.search', [query || ''])
       let list = Array.isArray(res) ? res : []
       if (type !== 'all') list = list.filter((m) => m.type === type)
-      setResults(list.slice(0, 500))
+      setResults(list) // keep the full set; category + render cap applied below
       if (list.length === 0) push({ kind: 'info', text: 'No modules matched that search.' })
     } finally {
       setSearching(false)
@@ -143,8 +144,16 @@ export default function ModuleBrowser({ connected, rpc, push }) {
             {searching ? '…' : 'Search'}
           </button>
         </div>
+        {results.length > 0 && (
+          <div className="result-count">
+            {displayed.length === results.length
+              ? `${displayed.length} result${displayed.length === 1 ? '' : 's'}`
+              : `${displayed.length} in ${category} (of ${results.length})`}
+            {displayed.length > RENDER_CAP && ` · showing first ${RENDER_CAP} — refine to narrow`}
+          </div>
+        )}
         <div className="results">
-          {displayed.map((m, i) => {
+          {displayed.slice(0, RENDER_CAP).map((m, i) => {
             const refname = m.fullname || m.refname || m.name
             const active = selected && selected.refname === refname
             return (
